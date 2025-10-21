@@ -115,14 +115,16 @@ flatpaks=(
 	org.localsend.localsend_app
 )
 
-while getopts "n:w" option; do
+while getopts "cn:w" option; do
 	case $option in
+		c)
+			clone_flag=true ;;
 		n)
 			host_name="$OPTARG" ;;
 		w)
 			wsl_flag=true ;;
 		*)
-			echo "Usage: $0 [-n hostname] [-w]"
+			echo "Usage: $0 [-c] [-n hostname] [-w]"
 			exit 1 ;;
 	esac
 done
@@ -222,19 +224,32 @@ fi
 ) &> /dev/null
 stop_spinner
 # Red warnings, reset to default color after
-if [[ ! -d "$HOME/.local/share/fonts/FiraCode" ]]; then
+if [[ ! -d "$HOME/.local/share/fonts/FiraCode" && -z ${wsl_flag-x} ]]; then
 	echo -e "\e[31mUnable to verify FiraCode SHA checksum, skipped installation\e[39m"
 fi
-if [[ ! -d "/opt/tor-browser/" ]]; then
+if [[ ! -d "/opt/tor-browser/" && -z ${wsl_flag-x} ]]; then
 	echo -e "\e[31mUnable to verify Tor Browser signature, skipped installation\e[39m"
 fi
 
 start_spinner "Configuring applications"
-cd ~/dotfiles/
-stow .
-sudo stow etc -t /etc/
-cd
-stop_spinner
+(
+if [[ -n ${clone_flag+x} ]]; then
+	git clone https://github.com/noahvanhaute/dotfiles.git
+else
+	ssh-keyscan github.com >> ~/.ssh/known_hosts
+	git clone git@github.com:noahvanhaute/dotfiles.git
+fi
+) &> /dev/null
+if [[ -d "$HOME/dotfiles" ]]; then
+	cd ~/dotfiles/
+	stow .
+	sudo stow etc -t /etc/
+	cd
+	stop_spinner
+else
+	stop_spinner
+	echo -e "\e[31mUnable to clone dotfiles\e[39m"
+fi
 
 if [[ -z ${wsl_flag+x} ]]; then
 	start_spinner "Setting up services"
