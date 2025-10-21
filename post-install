@@ -260,6 +260,7 @@ if [[ -z ${wsl_flag+x} ]]; then
 	stop_spinner
 
 	start_spinner "Setting up autostart"
+	mkdir -p .config/autostart
 	cp /usr/share/applications/org.flameshot.Flameshot.desktop ~/.config/autostart/
 	mkdir -p ~/Pictures/Screenshots/
 	stop_spinner
