@@ -9,7 +9,7 @@ Personal script for setting up a fresh install of openSUSE Tumbleweed.
 - You run the script as a user.
 
 ## Usage
-**! Never run a script off the internet without checking what it does first !"**
+**! Never run a script off the internet without checking what it does first !**
 
 This script can be ran without any cloning or downloading:
 ```console
