@@ -4,8 +4,9 @@ Personal script for setting up a fresh install of openSUSE Tumbleweed.
 
 ## Perquisites
 
-- `git` must be installed
-- A working ssh setup for GitHub is expected by default
+- `git` must be installed.
+- A working ssh setup for GitHub is expected by default.
+- You run the script as a user.
 
 ## Usage
 
@@ -13,8 +14,9 @@ This script can be ran without any cloning or downloading:
 ```console
 curl https://raw.githubusercontent.com/noahvanhaute/post-install/refs/heads/main/post-install | bash
 ```
+After this you will be prompted for your root password, simply enter that and wait.
 
-The script also supports some flags:
+Some optional flags are also provided:
 ```console
 curl https://raw.githubusercontent.com/noahvanhaute/post-install/refs/heads/main/post-install | bash -s -- -c -n hostname -w
 ```
