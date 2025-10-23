@@ -4,7 +4,7 @@ Personal script for setting up a fresh install of openSUSE Tumbleweed.
 
 ## Perquisites
 
-- `git` must be installed.
+- `git` and `curl` must be installed.
 - A working ssh setup for GitHub is expected by default.
 - You run the script as a user.
 
