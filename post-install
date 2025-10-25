@@ -71,6 +71,7 @@ desktop_packages=(
 	ibm-plex-mono-fonts
 	ibm-plex-sans-fonts
 	inkscape
+	iosevka-fonts
 	keyd
 	kicad
 	kid3
@@ -198,15 +199,6 @@ if [[ -z ${wsl_flag+x} ]]; then
 	flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 	flatpak install --assumeyes --noninteractive flathub "${flatpaks[@]}"
 
-	# Install Nerd Font
-	curl -LOO  https://github.com/ryanoasis/nerd-fonts/releases/latest/download/FiraCode.zip https://github.com/ryanoasis/nerd-fonts/releases/latest/download/SHA-256.txt
-	if sha256sum -c SHA-256.txt --ignore-missing
-	then
-	unzip FiraCode.zip -d ~/.local/share/fonts/FiraCode/
-	rm FiraCode.zip SHA-256.txt
-	fc-cache -fv
-	fi
-
 	# Install Tor Browser
 	gpg --auto-key-locate nodefault,wkd --locate-keys torbrowser@torproject.org
 	gpg --output ~/tor.keyring --export 0xEF6E286DDA85EA2A4BA7DE684E2C6E8793298290
@@ -223,10 +215,7 @@ if [[ -z ${wsl_flag+x} ]]; then
 fi
 ) &> /dev/null
 stop_spinner
-# Red warnings, reset to default color after
-if [[ ! -d "$HOME/.local/share/fonts/FiraCode" && -z ${wsl_flag-x} ]]; then
-	echo -e "\e[31mUnable to verify FiraCode SHA checksum, skipped installation\e[39m"
-fi
+# Red warning, reset to default color after
 if [[ ! -d "/opt/tor-browser/" && -z ${wsl_flag-x} ]]; then
 	echo -e "\e[31mUnable to verify Tor Browser signature, skipped installation\e[39m"
 fi
@@ -248,6 +237,7 @@ if [[ -d "$HOME/dotfiles" ]]; then
 	stop_spinner
 else
 	stop_spinner
+	# Red warning, reset to default color after
 	echo -e "\e[31mUnable to clone dotfiles\e[39m"
 fi
 
