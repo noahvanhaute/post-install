@@ -91,6 +91,7 @@ desktop_packages=(
 )
 
 latex_packages=(
+	perl-Parse-RecDescent # Required for biber
 	texlive-adjustbox
 	texlive-beamer
 	texlive-biber
