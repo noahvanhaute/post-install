@@ -90,6 +90,11 @@ desktop_packages=(
 	wezterm
 )
 
+wsl_packages=(
+	gzip
+	tar
+)
+
 latex_packages=(
 	perl-Parse-RecDescent # Required for biber
 	texlive-adjustbox
@@ -213,11 +218,14 @@ if [[ -z ${wsl_flag+x} ]]; then
 		./start-tor-browser.desktop --register-app
 		cd
 	fi
+else
+	sudo zypper --non-interactive remove --clean-deps busybox-gzip
+	sudo zypper --non-interactive install "${wsl_packages[@]}"
 fi
 ) &> /dev/null
 stop_spinner
 # Red warning, reset to default color after
-if [[ ! -d "/opt/tor-browser/" && -z ${wsl_flag-x} ]]; then
+if [[ ! -d "/opt/tor-browser/" && -z ${wsl_flag+x} ]]; then
 	echo -e "\e[31mUnable to verify Tor Browser signature, skipped installation\e[39m"
 fi
 
