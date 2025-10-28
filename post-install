@@ -103,6 +103,7 @@ latex_packages=(
 	texlive-biblatex-ieee
 	texlive-cleveref
 	texlive-csquotes
+	texlive-ieeetran
 	texlive-koma-script
 	texlive-latexmk
 	texlive-matlab-prettifier
@@ -113,6 +114,7 @@ latex_packages=(
 	texlive-scheme-basic
 	texlive-tabularray
 	texlive-tex-gyre
+	texlive-times
 )
 
 flatpaks=(
