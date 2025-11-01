@@ -202,7 +202,8 @@ sudo zypper --non-interactive refresh
 sudo zypper --non-interactive install "${essential_packages[@]}"
 sudo zypper --non-interactive install --no-recommends "${latex_packages[@]}"
 if [[ -z ${wsl_flag+x} ]]; then
-	sudo zypper --non-interactive al "iosevka-*-fonts"
+	# Lock prevents Iosevka variants from being installed on updates
+	sudo zypper --non-interactive addlock "iosevka-*-fonts"
 	sudo zypper --non-interactive install "${desktop_packages[@]}"
 	opi -n codecs
 	flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
