@@ -51,6 +51,7 @@ essential_packages=(
 	make
 	neovim
 	nodejs
+	python313-numpy
 	ShellCheck
 	stow
 	trash-cli
