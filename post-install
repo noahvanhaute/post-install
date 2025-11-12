@@ -104,6 +104,9 @@ latex_packages=(
 	texlive-biblatex-ieee
 	texlive-cleveref
 	texlive-csquotes
+	texlive-datatool-english
+	texlive-datatool-regions
+	texlive-glossaries-english
 	texlive-glossaries-extra
 	texlive-ieeetran
 	texlive-koma-script
