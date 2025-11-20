@@ -46,8 +46,9 @@ essential_packages=(
 	fastfetch
 	fzf
 	gcc
-	juliaup
+	gnuplot
 	jq
+	juliaup
 	make
 	neovim
 	nodejs
