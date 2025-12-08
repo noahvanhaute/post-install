@@ -50,6 +50,7 @@ essential_packages=(
 	jq
 	juliaup
 	make
+	ncdu
 	neovim
 	nodejs
 	python313-numpy
@@ -82,7 +83,6 @@ desktop_packages=(
 	mpd
 	mpDris2
 	mpv
-	ncdu
 	opi
 	qbittorrent
 	qview
