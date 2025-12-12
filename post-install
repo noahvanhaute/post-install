@@ -94,6 +94,7 @@ desktop_packages=(
 
 wsl_packages=(
 	gzip
+	man-pages
 	tar
 )
 
