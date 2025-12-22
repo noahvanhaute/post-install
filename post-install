@@ -203,6 +203,10 @@ start_spinner "Installing packages, this might take a while"
 sudo zypper --non-interactive addrepo https://download.opensuse.org/repositories/home:leanvargas/openSUSE_Tumbleweed/home:leanvargas.repo
 sudo rpm --import https://download.opensuse.org/repositories/home:/leanvargas/openSUSE_Tumbleweed/repodata/repomd.xml.key
 sudo zypper --non-interactive refresh
+if [[ -d /mnt/c/Windows ]]; then
+	sudo zypper --non-interactive remove --clean-deps busybox-gzip busybox-which
+	sudo zypper --non-interactive install "${wsl_packages[@]}"
+fi
 sudo zypper --non-interactive install "${essential_packages[@]}"
 sudo zypper --non-interactive install --no-recommends "${latex_packages[@]}"
 if [[ ! -d /mnt/c/Windows ]]; then
@@ -226,9 +230,6 @@ if [[ ! -d /mnt/c/Windows ]]; then
 		./start-tor-browser.desktop --register-app
 		cd
 	fi
-else
-	sudo zypper --non-interactive remove --clean-deps busybox-gzip
-	sudo zypper --non-interactive install "${wsl_packages[@]}"
 fi
 ) &> /dev/null
 stop_spinner
