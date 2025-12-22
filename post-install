@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
-spinner()
-{
+spinner() {
 	local i=1
 	local prompt="$1"
 	local spinchars="\|/-"
@@ -31,7 +30,7 @@ stop_spinner() {
     fi
 }
 
-cleanup () {
+cleanup() {
 	stop_spinner
 	# Restore sudo timeout to default
 	sudo rm -f /etc/sudoers.d/timeout
