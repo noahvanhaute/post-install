@@ -130,16 +130,14 @@ flatpaks=(
 	org.localsend.localsend_app
 )
 
-while getopts "cn:w" option; do
+while getopts "cn:" option; do
 	case $option in
 		c)
 			clone_flag=true ;;
 		n)
 			host_name="$OPTARG" ;;
-		w)
-			wsl_flag=true ;;
 		*)
-			echo "Usage: $0 [-c] [-n hostname] [-w]"
+			echo "Usage: $0 [-c] [-n hostname]"
 			exit 1 ;;
 	esac
 done
@@ -155,7 +153,7 @@ echo -en "\e[?25l"
 # Temporarily increase timeout for sudo command to prevent being password prompted multiple times
 echo 'Defaults timestamp_timeout=30' | sudo tee /etc/sudoers.d/timeout &> /dev/null
 
-if [[ -z ${wsl_flag+x} ]]; then
+if [[ ! -d /mnt/c/Windows ]]; then
 	# Temporarily add a rule that turns of the need for a password to install flatpaks system-wide
 	sudo tee /etc/polkit-1/rules.d/45-flatpak-nopw.rules > /dev/null <<- EOF
 	polkit.addRule(function(action, subject) {
@@ -179,7 +177,7 @@ sudo sed -e 's/^# download.max_concurrent_connections = 5/download.max_concurren
 	-i /etc/zypp/zypp.conf
 stop_spinner
 
-if [[ -z ${wsl_flag+x} ]]; then
+if [[ ! -d /mnt/c/Windows ]]; then
 	start_spinner "Changing GRUB timeout"
 	sudo sed -i 's/^GRUB_TIMEOUT=[0-9]\+/GRUB_TIMEOUT=2/' /etc/default/grub
 	sudo grub2-mkconfig -o /boot/grub2/grub.cfg &> /dev/null
@@ -207,7 +205,7 @@ sudo rpm --import https://download.opensuse.org/repositories/home:/leanvargas/op
 sudo zypper --non-interactive refresh
 sudo zypper --non-interactive install "${essential_packages[@]}"
 sudo zypper --non-interactive install --no-recommends "${latex_packages[@]}"
-if [[ -z ${wsl_flag+x} ]]; then
+if [[ ! -d /mnt/c/Windows ]]; then
 	# Lock prevents Iosevka variants from being installed on updates
 	sudo zypper --non-interactive addlock "iosevka-*-fonts"
 	sudo zypper --non-interactive install "${desktop_packages[@]}"
@@ -235,7 +233,7 @@ fi
 ) &> /dev/null
 stop_spinner
 # Red warning, reset to default color after
-if [[ ! -d "/opt/tor-browser/" && -z ${wsl_flag+x} ]]; then
+if [[ ! -d "/opt/tor-browser/" && ! -d /mnt/c/Windows ]]; then
 	echo -e "\e[31mUnable to verify Tor Browser signature, skipped installation\e[39m"
 fi
 
@@ -260,7 +258,7 @@ else
 	echo -e "\e[31mUnable to clone dotfiles\e[39m"
 fi
 
-if [[ -z ${wsl_flag+x} ]]; then
+if [[ ! -d /mnt/c/Windows ]]; then
 	start_spinner "Setting up services"
 	(
 	sudo systemctl enable --now keyd

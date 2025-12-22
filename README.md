@@ -1,6 +1,7 @@
 # Post-install
 
 Personal script for setting up a fresh install of openSUSE Tumbleweed.
+Running on a WSL install is automatically detected and necessary adjustments are made.
 
 ## Perquisites
 
@@ -19,11 +20,10 @@ After this you will be prompted for your root password, simply enter that and wa
 
 Some optional flags are also provided:
 ```console
-curl https://raw.githubusercontent.com/noahvanhaute/post-install/refs/heads/main/post-install | bash -s -- -c -n hostname -w
+curl https://raw.githubusercontent.com/noahvanhaute/post-install/refs/heads/main/post-install | bash -s -- -c -n hostname
 ```
 
 | Flag          | Action                                                                                                             |
 | ------------- | ------------------------------------------------------------------------------------------------------------------ |
 | `-c`          | The scrips uses ssh for cloning the dotfiles repo by default, this flag will let you use https instead.            |
 | `-n hostname` | Set the hostname of the system, replace `hostname` with whatever you want (within the requirements for hostname). |
-| `-w`          | Specify that the install is a WSL install.                                                                         |
