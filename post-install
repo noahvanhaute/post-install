@@ -98,30 +98,40 @@ wsl_packages=(
 	tar
 )
 
-latex_packages=(
-	perl-Parse-RecDescent # Required for biber
-	texlive-adjustbox
-	texlive-beamer
-	texlive-biber
-	texlive-biblatex-ieee
-	texlive-cleveref
-	texlive-csquotes
-	texlive-datatool-english
-	texlive-datatool-regions
-	texlive-glossaries-english
-	texlive-glossaries-extra
-	texlive-ieeetran
-	texlive-koma-script
-	texlive-latexmk
-	texlive-matlab-prettifier
-	texlive-mhchem
-	texlive-newtx
-	texlive-pgfplots
-	texlive-plex
-	texlive-scheme-basic
-	texlive-tabularray
-	texlive-tex-gyre
-	texlive-times
+texlive_packages=(
+	adjustbox
+	beamer
+	biber
+	biblatex
+	biblatex-ieee
+	booktabs
+	caption
+	cleveref
+	csquotes
+	datatool-english
+	datatool-regions
+	eso-pic
+	float
+	fontaxes
+	glossaries-english
+	glossaries-extra
+	graphbox
+	ieeetran
+	koma-script
+	latexmk
+	listings
+	matlab-prettifier
+	mhchem
+	newtx
+	ninecolors
+	pgfplots
+	siunitx
+	soul
+	tabularray
+	uantwerpendocs
+	unicode-math
+	xcolor
+	xstring
 )
 
 flatpaks=(
@@ -156,7 +166,7 @@ echo 'Defaults timestamp_timeout=30' | sudo tee /etc/sudoers.d/timeout &> /dev/n
 
 if [[ ! -d /mnt/c/Windows ]]; then
 	# Temporarily add a rule that turns of the need for a password to install flatpaks system-wide
-	sudo tee /etc/polkit-1/rules.d/45-flatpak-nopw.rules > /dev/null <<- EOF
+	sudo tee /etc/polkit-1/rules.d/45-flatpak-nopw.rules > /dev/null <<-EOF
 	polkit.addRule(function(action, subject) {
 		if (action.id.startsWith("org.freedesktop.Flatpak") &&
 			subject.user == "$USER") {
@@ -186,11 +196,11 @@ if [[ ! -d /mnt/c/Windows ]]; then
 
 	start_spinner "Opening some ports"
 	# Port needs to be open for localsend to work
-	(
+	{
 	sudo firewall-cmd --permanent --add-port=53317/tcp
 	sudo firewall-cmd --permanent --add-port=53317/udp
 	sudo firewall-cmd --reload
-	) &> /dev/null
+	} &> /dev/null
 	stop_spinner
 fi
 
@@ -199,7 +209,7 @@ sudo zypper --non-interactive dist-upgrade --allow-vendor-change &> /dev/null
 stop_spinner
 
 start_spinner "Installing packages, this might take a while"
-(
+{
 # Additional repo provides `zsh-syntax-highlighting`
 sudo zypper --non-interactive addrepo https://download.opensuse.org/repositories/home:leanvargas/openSUSE_Tumbleweed/home:leanvargas.repo
 sudo rpm --import https://download.opensuse.org/repositories/home:/leanvargas/openSUSE_Tumbleweed/repodata/repomd.xml.key
@@ -209,7 +219,6 @@ if [[ -d /mnt/c/Windows ]]; then
 	sudo zypper --non-interactive install "${wsl_packages[@]}"
 fi
 sudo zypper --non-interactive install "${essential_packages[@]}"
-sudo zypper --non-interactive install --no-recommends "${latex_packages[@]}"
 if [[ ! -d /mnt/c/Windows ]]; then
 	# Lock prevents Iosevka variants from being installed on updates
 	sudo zypper --non-interactive addlock "iosevka-*-fonts"
@@ -222,8 +231,7 @@ if [[ ! -d /mnt/c/Windows ]]; then
 	gpg --auto-key-locate nodefault,wkd --locate-keys torbrowser@torproject.org
 	gpg --output "$HOME/tor.keyring" --export 0xEF6E286DDA85EA2A4BA7DE684E2C6E8793298290
 	curl -LOO $(curl -s https://aus1.torproject.org/torbrowser/update_3/release/download-linux-x86_64.json | jq -r '"\(.binary) \(.sig)"')
-	if gpgv --keyring ./tor.keyring "$HOME"/tor-browser-linux-x86_64-*.tar.xz.asc "$HOME"/tor-browser-linux-x86_64-*.tar.xz
-	then
+	if gpgv --keyring ./tor.keyring "$HOME"/tor-browser-linux-x86_64-*.tar.xz.asc "$HOME"/tor-browser-linux-x86_64-*.tar.xz; then
 		tar -xJf tor-browser-linux-x86_64-*.tar.xz
 		rm tor-browser-linux-x86_64-*.tar.xz tor-browser-linux-x86_64-*.tar.xz.asc tor.keyring
 		sudo mv tor-browser /opt/
@@ -232,22 +240,78 @@ if [[ ! -d /mnt/c/Windows ]]; then
 		cd
 	fi
 fi
-) &> /dev/null
+
+# Install vanilla Tex Live
+curl -LOO https://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz https://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz.sha512
+
+if sha512sum -c --ignore-missing install-tl-unx.tar.gz.sha512; then
+	tar -xf install-tl-unx.tar.gz
+
+	texlive_release=$(grep "ReleaseYear = *" "$HOME"/install-tl-*/tlpkg/TeXLive/TLConfig.pm | grep -o "[0-9]\{4\}")
+
+	tee > profile <<-EOF
+		selected_scheme scheme-custom
+		TEXDIR $HOME/.opt/texlive/$texlive_release
+		TEXMFCONFIG $HOME/.texlive$texlive_release/texmf-config
+		TEXMFHOME $HOME/texmf
+		TEXMFLOCAL $HOME/.opt/texlive/texmf-local
+		TEXMFSYSCONFIG $HOME/.opt/texlive/$texlive_release/texmf-config
+		TEXMFSYSVAR $HOME/.opt/texlive/$texlive_release/texmf-var
+		TEXMFVAR $HOME/.texlive$texlive_release/texmf-var
+		binary_x86_64-linux 1
+		collection-basic 1
+		collection-fontsrecommended 1
+		collection-latex 1
+		collection-xetex 1
+		instopt_adjustpath 0
+		instopt_adjustrepo 1
+		instopt_letter 0
+		instopt_portable 0
+		instopt_write18_restricted 1
+		tlpdbopt_autobackup 1
+		tlpdbopt_backupdir tlpkg/backups
+		tlpdbopt_create_formats 1
+		tlpdbopt_desktop_integration 1
+		tlpdbopt_file_assocs 1
+		tlpdbopt_generate_updmap 0
+		tlpdbopt_install_docfiles 1
+		tlpdbopt_install_srcfiles 1
+		tlpdbopt_post_code 1
+		tlpdbopt_sys_bin /usr/local/bin
+		tlpdbopt_sys_info /usr/local/share/info
+		tlpdbopt_sys_man /usr/local/share/man
+		tlpdbopt_w32_multi_user 1
+	EOF
+
+	perl "$HOME"/install-tl-*/install-tl --profile=profile
+
+	rm -rf install-tl* profile
+
+	ln -sfn "$HOME/.opt/texlive/$texlive_release" "$HOME/.opt/texlive/current"
+
+	PATH="$PATH:$HOME/.opt/texlive/current/bin/x86_64-linux"
+
+	tlmgr install "${texlive_packages[@]}"
+fi
+} &> /dev/null
 stop_spinner
-# Red warning, reset to default color after
+# Red warnings, reset to default color after
 if [[ ! -d "/opt/tor-browser/" && ! -d /mnt/c/Windows ]]; then
 	echo -e "\e[31mUnable to verify Tor Browser signature, skipped installation\e[39m"
 fi
+if [[ ! -d "$HOME/.opt/texlive/$texlive_release/bin" ]]; then
+	echo -e "\e[31mUnable to verify Tex Live signature, skipped installation\e[39m"
+fi
 
 start_spinner "Configuring applications"
-(
+{
 if [[ -n ${clone_flag+x} ]]; then
 	git clone https://github.com/noahvanhaute/dotfiles.git
 else
 	ssh-keyscan github.com >> "$HOME/.ssh/known_hosts"
 	git clone git@github.com:noahvanhaute/dotfiles.git
 fi
-) &> /dev/null
+} &> /dev/null
 if [[ -d "$HOME/dotfiles" ]]; then
 	cd "$HOME/dotfiles/"
 	stow .
@@ -262,10 +326,10 @@ fi
 
 if [[ ! -d /mnt/c/Windows ]]; then
 	start_spinner "Setting up services"
-	(
+	{
 	sudo systemctl enable --now keyd
 	systemctl enable --now --user mpd mpDris2 syncthing
-	) &> /dev/null
+	} &> /dev/null
 	stop_spinner
 
 	start_spinner "Setting up autostart"
