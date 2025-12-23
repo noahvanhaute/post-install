@@ -274,8 +274,8 @@ if sha512sum -c --ignore-missing install-tl-unx.tar.gz.sha512; then
 		tlpdbopt_desktop_integration 1
 		tlpdbopt_file_assocs 1
 		tlpdbopt_generate_updmap 0
-		tlpdbopt_install_docfiles 1
-		tlpdbopt_install_srcfiles 1
+		tlpdbopt_install_docfiles 0
+		tlpdbopt_install_srcfiles 0
 		tlpdbopt_post_code 1
 		tlpdbopt_sys_bin /usr/local/bin
 		tlpdbopt_sys_info /usr/local/share/info
@@ -299,7 +299,7 @@ stop_spinner
 if [[ ! -d "/opt/tor-browser/" && ! -d /mnt/c/Windows ]]; then
 	echo -e "\e[31mUnable to verify Tor Browser signature, skipped installation\e[39m"
 fi
-if [[ ! -d "$HOME/.opt/texlive/$texlive_release/bin" ]]; then
+if [[ ! -d "$HOME/.opt/texlive" ]]; then
 	echo -e "\e[31mUnable to verify Tex Live signature, skipped installation\e[39m"
 fi
 
