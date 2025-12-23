@@ -124,6 +124,7 @@ texlive_packages=(
 	mhchem
 	newtx
 	ninecolors
+	plex
 	pgfplots
 	siunitx
 	soul
