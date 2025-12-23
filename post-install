@@ -220,9 +220,9 @@ if [[ ! -d /mnt/c/Windows ]]; then
 
 	# Install Tor Browser
 	gpg --auto-key-locate nodefault,wkd --locate-keys torbrowser@torproject.org
-	gpg --output $HOME/tor.keyring --export 0xEF6E286DDA85EA2A4BA7DE684E2C6E8793298290
+	gpg --output "$HOME/tor.keyring" --export 0xEF6E286DDA85EA2A4BA7DE684E2C6E8793298290
 	curl -LOO $(curl -s https://aus1.torproject.org/torbrowser/update_3/release/download-linux-x86_64.json | jq -r '"\(.binary) \(.sig)"')
-	if gpgv --keyring ./tor.keyring $HOME/tor-browser-linux-x86_64-*.tar.xz.asc $HOME/tor-browser-linux-x86_64-*.tar.xz
+	if gpgv --keyring ./tor.keyring "$HOME/tor-browser-linux-x86_64-*.tar.xz.asc" "$HOME/tor-browser-linux-x86_64-*.tar.xz"
 	then
 		tar -xJf tor-browser-linux-x86_64-*.tar.xz
 		rm tor-browser-linux-x86_64-*.tar.xz tor-browser-linux-x86_64-*.tar.xz.asc tor.keyring
@@ -244,12 +244,12 @@ start_spinner "Configuring applications"
 if [[ -n ${clone_flag+x} ]]; then
 	git clone https://github.com/noahvanhaute/dotfiles.git
 else
-	ssh-keyscan github.com >> $HOME/.ssh/known_hosts
+	ssh-keyscan github.com >> "$HOME/.ssh/known_hosts"
 	git clone git@github.com:noahvanhaute/dotfiles.git
 fi
 ) &> /dev/null
 if [[ -d "$HOME/dotfiles" ]]; then
-	cd $HOME/dotfiles/
+	cd "$HOME/dotfiles/"
 	stow .
 	sudo stow etc -t /etc/
 	cd
@@ -270,8 +270,8 @@ if [[ ! -d /mnt/c/Windows ]]; then
 
 	start_spinner "Setting up autostart"
 	mkdir -p .config/autostart
-	cp /usr/share/applications/org.flameshot.Flameshot.desktop $HOME/.config/autostart/
-	mkdir -p $HOME/Pictures/Screenshots/
+	cp /usr/share/applications/org.flameshot.Flameshot.desktop "$HOME/.config/autostart/"
+	mkdir -p "$HOME/Pictures/Screenshots/"
 	stop_spinner
 fi
 
