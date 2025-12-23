@@ -3,9 +3,9 @@
 Personal script for setting up a fresh install of openSUSE Tumbleweed.
 Running on a WSL install is automatically detected and necessary adjustments are made.
 
-## Perquisites
+## Prerequisites
 
-- `git` and `curl` must be installed.
+- `curl` must be installed.
 - A working ssh setup for GitHub is expected by default.
 - You run the script as a user.
 
