@@ -171,12 +171,12 @@ echo 'Defaults timestamp_timeout=30' | sudo tee /etc/sudoers.d/timeout
 if [[ ! -d /mnt/c/Windows ]]; then
 	# Temporarily add a rule that turns of the need for a password to install flatpaks system-wide
 	sudo tee /etc/polkit-1/rules.d/45-flatpak-nopw.rules > /dev/null <<-EOF
-	polkit.addRule(function(action, subject) {
-		if (action.id.startsWith("org.freedesktop.Flatpak") &&
-			subject.user == "$USER") {
-				return polkit.Result.YES;
-			}
-	});
+		polkit.addRule(function(action, subject) {
+			if (action.id.startsWith("org.freedesktop.Flatpak") &&
+				subject.user == "$USER") {
+					return polkit.Result.YES;
+				}
+		});
 	EOF
 fi
 
@@ -236,9 +236,10 @@ if [[ ! -d /mnt/c/Windows ]]; then
 		tar -xJf tor-browser-linux-x86_64-*.tar.xz
 		rm tor-browser-linux-x86_64-*.tar.xz tor-browser-linux-x86_64-*.tar.xz.asc tor.keyring
 		sudo mv tor-browser /opt/
-		cd /opt/tor-browser/
-		./start-tor-browser.desktop --register-app
-		cd
+		(cd /opt/tor-browser/; ./start-tor-browser.desktop --register-app)
+	else
+		rm tor-browser-linux-x86_64-*.tar.xz
+		echo -e "\e[31mUnable to verify Tor Browser signature, skipped installation\e[39m" >&4
 	fi
 fi
 
@@ -293,15 +294,11 @@ if sha512sum -c --ignore-missing install-tl-unx.tar.gz.sha512; then
 	PATH="$PATH:$HOME/.opt/texlive/current/bin/x86_64-linux"
 
 	tlmgr install "${texlive_packages[@]}"
-fi
-stop_spinner
-# Red warnings, reset to default color after
-if [[ ! -d "/opt/tor-browser/" && ! -d /mnt/c/Windows ]]; then
-	echo -e "\e[31mUnable to verify Tor Browser signature, skipped installation\e[39m" >&4
-fi
-if [[ ! -d "$HOME/.opt/texlive" ]]; then
+else
+	rm -rf install-tl* profile
 	echo -e "\e[31mUnable to verify Tex Live signature, skipped installation\e[39m" >&4
 fi
+stop_spinner
 
 start_spinner "Configuring applications"
 if [[ -n ${clone_flag+x} ]]; then
@@ -311,10 +308,7 @@ else
 	git clone git@github.com:noahvanhaute/dotfiles.git
 fi
 if [[ -d "$HOME/dotfiles" ]]; then
-	cd "$HOME/dotfiles/"
-	stow .
-	sudo stow etc -t /etc/
-	cd
+	(cd "$HOME/dotfiles/" && stow . && sudo stow etc -t /etc/)
 	stop_spinner
 else
 	stop_spinner
