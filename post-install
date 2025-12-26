@@ -24,7 +24,7 @@ start_spinner() {
 }
 
 stop_spinner() {
-    if [[ -n "${SPINNER_PID:-}" ]]; then
+    if [[ -n ${SPINNER_PID:-} ]]; then
         kill "$SPINNER_PID"
         wait "$SPINNER_PID"
         unset SPINNER_PID
@@ -307,7 +307,7 @@ else
 	ssh-keyscan github.com >> "$HOME/.ssh/known_hosts"
 	git clone git@github.com:noahvanhaute/dotfiles.git
 fi
-if [[ -d "$HOME/dotfiles" ]]; then
+if [[ -d $HOME/dotfiles ]]; then
 	(cd "$HOME/dotfiles/" && stow . && sudo stow etc -t /etc/)
 	stop_spinner
 else
