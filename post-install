@@ -1,15 +1,18 @@
 #!/usr/bin/env bash
 
+exec 3>&1 4>&2
+exec 1>/dev/null 2>/dev/null
+
 spinner() {
 	local i=1
 	local prompt="$1"
 	local spinchars="\|/-"
 
-	echo -n "$prompt ["
+	echo -n "$prompt [" >&3
 	while :
 	do
-		echo -en "${spinchars:i++%4:1}]"
-		echo -en "\b\b"
+		echo -en "${spinchars:i++%4:1}]" >&3
+		echo -en "\b\b" >&3
 		sleep 0.1
 	done
 }
@@ -22,11 +25,11 @@ start_spinner() {
 
 stop_spinner() {
     if [[ -n "${SPINNER_PID:-}" ]]; then
-        kill "$SPINNER_PID" 2>/dev/null
-        wait "$SPINNER_PID" 2>/dev/null
+        kill "$SPINNER_PID"
+        wait "$SPINNER_PID"
         unset SPINNER_PID
 		# Green check mark, reset to default color after
-		echo -e "\e[32m✔\e[39m"
+		echo -e "\e[32m✔\e[39m" >&3
     fi
 }
 
@@ -149,7 +152,7 @@ while getopts "cn:" option; do
 		n)
 			host_name="$OPTARG" ;;
 		*)
-			echo "Usage: $0 [-c] [-n hostname]"
+			echo "Usage: $0 [-c] [-n hostname]" >&4
 			exit 1 ;;
 	esac
 done
@@ -163,7 +166,7 @@ set -Eeuo pipefail
 echo -en "\e[?25l"
 
 # Temporarily increase timeout for sudo command to prevent being password prompted multiple times
-echo 'Defaults timestamp_timeout=30' | sudo tee /etc/sudoers.d/timeout &> /dev/null
+echo 'Defaults timestamp_timeout=30' | sudo tee /etc/sudoers.d/timeout
 
 if [[ ! -d /mnt/c/Windows ]]; then
 	# Temporarily add a rule that turns of the need for a password to install flatpaks system-wide
@@ -192,25 +195,22 @@ stop_spinner
 if [[ ! -d /mnt/c/Windows ]]; then
 	start_spinner "Changing GRUB timeout"
 	sudo sed -i 's/^GRUB_TIMEOUT=[0-9]\+/GRUB_TIMEOUT=2/' /etc/default/grub
-	sudo grub2-mkconfig -o /boot/grub2/grub.cfg &> /dev/null
+	sudo grub2-mkconfig -o /boot/grub2/grub.cfg
 	stop_spinner
 
 	start_spinner "Opening some ports"
 	# Port needs to be open for localsend to work
-	{
 	sudo firewall-cmd --permanent --add-port=53317/tcp
 	sudo firewall-cmd --permanent --add-port=53317/udp
 	sudo firewall-cmd --reload
-	} &> /dev/null
 	stop_spinner
 fi
 
 start_spinner "Updating the system"
-sudo zypper --non-interactive dist-upgrade --allow-vendor-change &> /dev/null
+sudo zypper --non-interactive dist-upgrade --allow-vendor-change
 stop_spinner
 
 start_spinner "Installing packages, this might take a while"
-{
 # Additional repo provides `zsh-syntax-highlighting`
 sudo zypper --non-interactive addrepo https://download.opensuse.org/repositories/home:leanvargas/openSUSE_Tumbleweed/home:leanvargas.repo
 sudo rpm --import https://download.opensuse.org/repositories/home:/leanvargas/openSUSE_Tumbleweed/repodata/repomd.xml.key
@@ -294,25 +294,22 @@ if sha512sum -c --ignore-missing install-tl-unx.tar.gz.sha512; then
 
 	tlmgr install "${texlive_packages[@]}"
 fi
-} &> /dev/null
 stop_spinner
 # Red warnings, reset to default color after
 if [[ ! -d "/opt/tor-browser/" && ! -d /mnt/c/Windows ]]; then
-	echo -e "\e[31mUnable to verify Tor Browser signature, skipped installation\e[39m"
+	echo -e "\e[31mUnable to verify Tor Browser signature, skipped installation\e[39m" >&4
 fi
 if [[ ! -d "$HOME/.opt/texlive" ]]; then
-	echo -e "\e[31mUnable to verify Tex Live signature, skipped installation\e[39m"
+	echo -e "\e[31mUnable to verify Tex Live signature, skipped installation\e[39m" >&4
 fi
 
 start_spinner "Configuring applications"
-{
 if [[ -n ${clone_flag+x} ]]; then
 	git clone https://github.com/noahvanhaute/dotfiles.git
 else
 	ssh-keyscan github.com >> "$HOME/.ssh/known_hosts"
 	git clone git@github.com:noahvanhaute/dotfiles.git
 fi
-} &> /dev/null
 if [[ -d "$HOME/dotfiles" ]]; then
 	cd "$HOME/dotfiles/"
 	stow .
@@ -322,15 +319,13 @@ if [[ -d "$HOME/dotfiles" ]]; then
 else
 	stop_spinner
 	# Red warning, reset to default color after
-	echo -e "\e[31mUnable to clone dotfiles\e[39m"
+	echo -e "\e[31mUnable to clone dotfiles\e[39m" >&4
 fi
 
 if [[ ! -d /mnt/c/Windows ]]; then
 	start_spinner "Setting up services"
-	{
 	sudo systemctl enable --now keyd
 	systemctl enable --now --user mpd mpDris2 syncthing
-	} &> /dev/null
 	stop_spinner
 
 	start_spinner "Setting up autostart"
@@ -344,4 +339,4 @@ start_spinner "Setting zsh as default shell"
 sudo chsh -s /usr/bin/zsh "$USER"
 stop_spinner
 
-echo "Setup complete, you should reboot your system"
+echo "Setup complete, you should reboot your system" >&3
