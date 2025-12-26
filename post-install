@@ -40,7 +40,7 @@ cleanup() {
 	# Remove temporary polkit flatpak rule
 	sudo rm -f /etc/polkit-1/rules.d/45-flatpak-nopw.rules
 	# Make the cursor visible again
-	echo -en "\e[?25h"
+	echo -en "\e[?25h" >&3
 }
 
 essential_packages=(
@@ -163,7 +163,7 @@ trap 'echo "Error on line $LINENO"; cleanup' ERR INT TERM
 set -Eeuo pipefail
 
 # Hide the cursor
-echo -en "\e[?25l"
+echo -en "\e[?25l" >&3
 
 # Temporarily increase timeout for sudo command to prevent being password prompted multiple times
 echo 'Defaults timestamp_timeout=30' | sudo tee /etc/sudoers.d/timeout
