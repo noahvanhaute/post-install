@@ -111,13 +111,13 @@ FLATPAKS=(
 spinner() {
 	local i=1
 	local prompt="$1"
-	local spinchars="\|/-"
+	local spinchars='\|/-'
 
 	echo -n "$prompt [" >&3
 	while :
 	do
 		echo -en "${spinchars:i++%4:1}]" >&3
-		echo -en "\b\b" >&3
+		echo -en '\b\b' >&3
 		sleep 0.1
 	done
 }
@@ -211,7 +211,7 @@ install_essential_packages() {
 
 install_desktop_packages() {
 	# Lock prevents Iosevka variants from being installed on updates
-	sudo zypper --non-interactive addlock "iosevka-*-fonts"
+	sudo zypper --non-interactive addlock iosevka-*-fonts
 	sudo zypper --non-interactive install "${DESKTOP_PACKAGES[@]}"
 }
 
@@ -247,7 +247,7 @@ install_texlive() {
 	if sha512sum -c --ignore-missing install-tl-unx.tar.gz.sha512; then
 		tar -xf install-tl-unx.tar.gz
 
-		texlive_release=$(grep "ReleaseYear = *" "$HOME"/install-tl-*/tlpkg/TeXLive/TLConfig.pm | grep -o "[0-9]\{4\}")
+		texlive_release=$(grep 'ReleaseYear = *' "$HOME"/install-tl-*/tlpkg/TeXLive/TLConfig.pm | grep -o '[0-9]\{4\}')
 
 		tee > profile <<-EOF
 			selected_scheme scheme-custom
@@ -338,7 +338,7 @@ main() {
 
 	echo -en "$HIDE_CURSOR" >&3
 
-	while getopts "cn:" option; do
+	while getopts 'cn:' option; do
 		case $option in
 			c)
 				clone_flag=true ;;
@@ -357,30 +357,30 @@ main() {
 	fi
 
 	if [[ -n ${host_name+x} ]]; then
-		start_spinner "Setting hostname"
+		start_spinner 'Setting hostname'
 		set_hostname
 		stop_spinner
 	fi
 
-	start_spinner "Making zypper faster"
+	start_spinner 'Making zypper faster'
 	configure_zypper
 	stop_spinner
 
 	if ! is_wsl; then
-		start_spinner "Changing GRUB timeout"
+		start_spinner 'Changing GRUB timeout'
 		configure_grub
 		stop_spinner
 
-		start_spinner "Opening some ports"
+		start_spinner 'Opening some ports'
 		open_ports
 		stop_spinner
 	fi
 
-	start_spinner "Updating the system"
+	start_spinner 'Updating the system'
 	update_system
 	stop_spinner
 
-	start_spinner "Installing packages, this might take a while"
+	start_spinner 'Installing packages, this might take a while'
 	add_highlight_repo
 	if is_wsl; then
 		install_wsl_packages
@@ -395,25 +395,25 @@ main() {
 	install_texlive
 	stop_spinner
 
-	start_spinner "Configuring applications"
+	start_spinner 'Configuring applications'
 	configure_applications
 	stop_spinner
 
 	if ! is_wsl; then
-		start_spinner "Setting up services"
+		start_spinner 'Setting up services'
 		setup_services
 		stop_spinner
 
-		start_spinner "Setting up autostart"
+		start_spinner 'Setting up autostart'
 		setup_autostart
 		stop_spinner
 	fi
 
-	start_spinner "Setting zsh as default shell"
+	start_spinner 'Setting zsh as default shell'
 	change_shell
 	stop_spinner
 
-	echo "Setup complete, you should reboot your system" >&3
+	echo 'Setup complete, you should reboot your system' >&3
 }
 
 main "$@"
