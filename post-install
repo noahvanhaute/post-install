@@ -1,13 +1,11 @@
 #!/usr/bin/env bash
 
-exec 3>&1 4>&2
-exec 1>/dev/null 2>/dev/null
-
 RED='\e[31m'
 GREEN='\e[32m'
 DEFAULT='\e[39m'
 HIDE_CURSOR='\e[?25l'
 SHOW_CURSOR='\e[?25h'
+
 ESSENTIAL_PACKAGES=(
 	btop
 	fastfetch
@@ -131,49 +129,33 @@ start_spinner() {
 }
 
 stop_spinner() {
-    if [[ -n ${SPINNER_PID:-} ]]; then
-        kill "$SPINNER_PID"
-        wait "$SPINNER_PID"
-        unset SPINNER_PID
-		# Green check mark, reset to default color after
+	if [[ -n ${SPINNER_PID:-} ]]; then
+		kill "$SPINNER_PID"
+		wait "$SPINNER_PID"
+		unset SPINNER_PID
 		echo -e "${GREEN}✔${DEFAULT}" >&3
-    fi
+	fi
 }
 
 cleanup() {
 	stop_spinner
 	# Restore sudo timeout to default
 	sudo rm -f /etc/sudoers.d/timeout
-	# Remove temporary polkit flatpak rule
+	# Remove temporary polkit Flatpak rule
 	sudo rm -f /etc/polkit-1/rules.d/45-flatpak-nopw.rules
-	# Make the cursor visible again
 	echo -en "$SHOW_CURSOR" >&3
 }
 
-while getopts "cn:" option; do
-	case $option in
-		c)
-			clone_flag=true ;;
-		n)
-			host_name="$OPTARG" ;;
-		*)
-			echo "Usage: $0 [-c] [-n hostname]" >&4
-			exit 1 ;;
-	esac
-done
+is_wsl () {
+	[[ -d /mnt/c/Windows ]]
+}
 
-trap cleanup EXIT
-trap 'echo "Error on line $LINENO"; cleanup' ERR INT TERM
+sudo_timeout() {
+	# Temporarily increase timeout for sudo command to prevent being password prompted multiple times
+	echo 'Defaults timestamp_timeout=30' | sudo tee /etc/sudoers.d/timeout
+}
 
-set -Eeuo pipefail
-
-# Hide the cursor
-echo -en "$HIDE_CURSOR" >&3
-
-# Temporarily increase timeout for sudo command to prevent being password prompted multiple times
-echo 'Defaults timestamp_timeout=30' | sudo tee /etc/sudoers.d/timeout
-
-if [[ ! -d /mnt/c/Windows ]]; then
+flatpak_no_pw() {
 	# Temporarily add a rule that turns of the need for a password to install Flatpaks system-wide
 	sudo tee /etc/polkit-1/rules.d/45-flatpak-nopw.rules > /dev/null <<-EOF
 		polkit.addRule(function(action, subject) {
@@ -183,60 +165,71 @@ if [[ ! -d /mnt/c/Windows ]]; then
 				}
 		});
 	EOF
-fi
+}
 
-if [[ -n ${host_name+x} ]]; then
-	start_spinner "Setting hostname"
+set_hostname() {
 	sudo hostnamectl hostname "$host_name"
-	stop_spinner
-fi
+}
 
-start_spinner "Making zypper faster"
-sudo sed -e 's/^# download.max_concurrent_connections = 5/download.max_concurrent_connections = 10/' \
-	-e 's/^# download.min_download_speed = 0/download.min_download_speed = 20000/' \
-	-i /etc/zypp/zypp.conf
-stop_spinner
+configure_zypper() {
+	sudo sed -e 's/^# download.max_concurrent_connections = 5/download.max_concurrent_connections = 10/' \
+		-e 's/^# download.min_download_speed = 0/download.min_download_speed = 20000/' \
+		-i /etc/zypp/zypp.conf
+}
 
-if [[ ! -d /mnt/c/Windows ]]; then
-	start_spinner "Changing GRUB timeout"
+configure_grub() {
 	sudo sed -i 's/^GRUB_TIMEOUT=[0-9]\+/GRUB_TIMEOUT=2/' /etc/default/grub
 	sudo grub2-mkconfig -o /boot/grub2/grub.cfg
-	stop_spinner
+}
 
-	start_spinner "Opening some ports"
-	# Port needs to be open for localsend to work
+open_ports() {
+	# These ports need to be open for LocalSend to work
 	sudo firewall-cmd --permanent --add-port=53317/tcp
 	sudo firewall-cmd --permanent --add-port=53317/udp
 	sudo firewall-cmd --reload
-	stop_spinner
-fi
+}
 
-start_spinner "Updating the system"
-sudo zypper --non-interactive dist-upgrade --allow-vendor-change
-stop_spinner
+update_system() {
+	sudo zypper --non-interactive dist-upgrade --allow-vendor-change
+}
 
-start_spinner "Installing packages, this might take a while"
-# Additional repo provides `zsh-syntax-highlighting`
-sudo zypper --non-interactive addrepo https://download.opensuse.org/repositories/home:leanvargas/openSUSE_Tumbleweed/home:leanvargas.repo
-sudo rpm --import https://download.opensuse.org/repositories/home:/leanvargas/openSUSE_Tumbleweed/repodata/repomd.xml.key
-sudo zypper --non-interactive refresh
-if [[ -d /mnt/c/Windows ]]; then
+add_highlight_repo() {
+	# Additional repo provides `zsh-syntax-highlighting`
+	sudo zypper --non-interactive addrepo https://download.opensuse.org/repositories/home:leanvargas/openSUSE_Tumbleweed/home:leanvargas.repo
+	sudo rpm --import https://download.opensuse.org/repositories/home:/leanvargas/openSUSE_Tumbleweed/repodata/repomd.xml.key
+	sudo zypper --non-interactive refresh
+}
+
+install_wsl_packages() {
 	sudo zypper --non-interactive remove --clean-deps busybox-gzip busybox-which
 	sudo zypper --non-interactive install "${WSL_PACKAGES[@]}"
-fi
-sudo zypper --non-interactive install "${ESSENTIAL_PACKAGES[@]}"
-if [[ ! -d /mnt/c/Windows ]]; then
+}
+
+install_essential_packages() {
+	sudo zypper --non-interactive install "${ESSENTIAL_PACKAGES[@]}"
+}
+
+install_desktop_packages() {
 	# Lock prevents Iosevka variants from being installed on updates
 	sudo zypper --non-interactive addlock "iosevka-*-fonts"
 	sudo zypper --non-interactive install "${DESKTOP_PACKAGES[@]}"
+}
+
+install_codecs() {
 	opi -n codecs
+}
+
+install_flatpaks() {
 	flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 	flatpak install --assumeyes --noninteractive flathub "${FLATPAKS[@]}"
+}
 
-	# Install Tor Browser
+install_tor() {
 	gpg --auto-key-locate nodefault,wkd --locate-keys torbrowser@torproject.org
 	gpg --output "$HOME/tor.keyring" --export 0xEF6E286DDA85EA2A4BA7DE684E2C6E8793298290
+
 	curl -LOO $(curl -s https://aus1.torproject.org/torbrowser/update_3/release/download-linux-x86_64.json | jq -r '"\(.binary) \(.sig)"')
+
 	if gpgv --keyring ./tor.keyring "$HOME"/tor-browser-linux-x86_64-*.tar.xz.asc "$HOME"/tor-browser-linux-x86_64-*.tar.xz; then
 		tar -xJf tor-browser-linux-x86_64-*.tar.xz
 		rm tor-browser-linux-x86_64-*.tar.xz tor-browser-linux-x86_64-*.tar.xz.asc tor.keyring
@@ -246,96 +239,181 @@ if [[ ! -d /mnt/c/Windows ]]; then
 		rm tor-browser-linux-x86_64-*.tar.xz
 		echo -e "${RED}Unable to verify Tor Browser signature, skipped installation${DEFAULT}" >&4
 	fi
-fi
+}
 
-# Install vanilla Tex Live
-curl -LOO https://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz https://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz.sha512
+install_texlive() {
+	curl -LOO https://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz https://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz.sha512
 
-if sha512sum -c --ignore-missing install-tl-unx.tar.gz.sha512; then
-	tar -xf install-tl-unx.tar.gz
+	if sha512sum -c --ignore-missing install-tl-unx.tar.gz.sha512; then
+		tar -xf install-tl-unx.tar.gz
 
-	texlive_release=$(grep "ReleaseYear = *" "$HOME"/install-tl-*/tlpkg/TeXLive/TLConfig.pm | grep -o "[0-9]\{4\}")
+		texlive_release=$(grep "ReleaseYear = *" "$HOME"/install-tl-*/tlpkg/TeXLive/TLConfig.pm | grep -o "[0-9]\{4\}")
 
-	tee > profile <<-EOF
-		selected_scheme scheme-custom
-		TEXDIR $HOME/.opt/texlive/$texlive_release
-		TEXMFCONFIG $HOME/.texlive$texlive_release/texmf-config
-		TEXMFHOME $HOME/texmf
-		TEXMFLOCAL $HOME/.opt/texlive/texmf-local
-		TEXMFSYSCONFIG $HOME/.opt/texlive/$texlive_release/texmf-config
-		TEXMFSYSVAR $HOME/.opt/texlive/$texlive_release/texmf-var
-		TEXMFVAR $HOME/.texlive$texlive_release/texmf-var
-		binary_x86_64-linux 1
-		collection-basic 1
-		collection-fontsrecommended 1
-		collection-latex 1
-		collection-xetex 1
-		instopt_adjustpath 0
-		instopt_adjustrepo 1
-		instopt_letter 0
-		instopt_portable 0
-		instopt_write18_restricted 1
-		tlpdbopt_autobackup 1
-		tlpdbopt_backupdir tlpkg/backups
-		tlpdbopt_create_formats 1
-		tlpdbopt_desktop_integration 1
-		tlpdbopt_file_assocs 1
-		tlpdbopt_generate_updmap 0
-		tlpdbopt_install_docfiles 0
-		tlpdbopt_install_srcfiles 0
-		tlpdbopt_post_code 1
-		tlpdbopt_sys_bin /usr/local/bin
-		tlpdbopt_sys_info /usr/local/share/info
-		tlpdbopt_sys_man /usr/local/share/man
-		tlpdbopt_w32_multi_user 1
-	EOF
+		tee > profile <<-EOF
+			selected_scheme scheme-custom
+			TEXDIR $HOME/.opt/texlive/$texlive_release
+			TEXMFCONFIG $HOME/.texlive$texlive_release/texmf-config
+			TEXMFHOME $HOME/texmf
+			TEXMFLOCAL $HOME/.opt/texlive/texmf-local
+			TEXMFSYSCONFIG $HOME/.opt/texlive/$texlive_release/texmf-config
+			TEXMFSYSVAR $HOME/.opt/texlive/$texlive_release/texmf-var
+			TEXMFVAR $HOME/.texlive$texlive_release/texmf-var
+			binary_x86_64-linux 1
+			collection-basic 1
+			collection-fontsrecommended 1
+			collection-latex 1
+			collection-xetex 1
+			instopt_adjustpath 0
+			instopt_adjustrepo 1
+			instopt_letter 0
+			instopt_portable 0
+			instopt_write18_restricted 1
+			tlpdbopt_autobackup 1
+			tlpdbopt_backupdir tlpkg/backups
+			tlpdbopt_create_formats 1
+			tlpdbopt_desktop_integration 1
+			tlpdbopt_file_assocs 1
+			tlpdbopt_generate_updmap 0
+			tlpdbopt_install_docfiles 0
+			tlpdbopt_install_srcfiles 0
+			tlpdbopt_post_code 1
+			tlpdbopt_sys_bin /usr/local/bin
+			tlpdbopt_sys_info /usr/local/share/info
+			tlpdbopt_sys_man /usr/local/share/man
+			tlpdbopt_w32_multi_user 1
+		EOF
 
-	perl "$HOME"/install-tl-*/install-tl --profile=profile
+		perl "$HOME"/install-tl-*/install-tl --profile=profile
 
-	rm -rf install-tl* profile
+		rm -rf install-tl* profile
 
-	ln -sfn "$HOME/.opt/texlive/$texlive_release" "$HOME/.opt/texlive/current"
+		ln -sfn "$HOME/.opt/texlive/$texlive_release" "$HOME/.opt/texlive/current"
 
-	PATH="$PATH:$HOME/.opt/texlive/current/bin/x86_64-linux"
+		PATH="$PATH:$HOME/.opt/texlive/current/bin/x86_64-linux"
 
-	tlmgr install "${TEXLIVE_PACKAGES[@]}"
-else
-	rm -rf install-tl* profile
-	echo -e "${RED}Unable to verify Tex Live signature, skipped installation${DEFAULT}" >&4
-fi
-stop_spinner
+		tlmgr install "${TEXLIVE_PACKAGES[@]}"
+	else
+		rm -rf install-tl* profile
+		echo -e "${RED}Unable to verify Tex Live signature, skipped installation${DEFAULT}" >&4
+	fi
+}
 
-start_spinner "Configuring applications"
-if [[ -n ${clone_flag+x} ]]; then
-	git clone https://github.com/noahvanhaute/dotfiles.git
-else
-	ssh-keyscan github.com >> "$HOME/.ssh/known_hosts"
-	git clone git@github.com:noahvanhaute/dotfiles.git
-fi
-if [[ -d $HOME/dotfiles ]]; then
-	(cd "$HOME/dotfiles/" && stow . && sudo stow etc -t /etc/)
-	stop_spinner
-else
-	stop_spinner
-	# Red warning, reset to default color after
-	echo -e "${RED}Unable to clone dotfiles${DEFAULT}" >&4
-fi
+configure_applications() {
+	if [[ -n ${clone_flag+x} ]]; then
+		git clone https://github.com/noahvanhaute/dotfiles.git
+	else
+		ssh-keyscan github.com >> "$HOME/.ssh/known_hosts"
+		git clone git@github.com:noahvanhaute/dotfiles.git
+	fi
+	if [[ -d $HOME/dotfiles ]]; then
+		(cd "$HOME/dotfiles/" && stow . && sudo stow etc -t /etc/)
+	else
+		echo -e "${RED}Unable to clone dotfiles${DEFAULT}" >&4
+	fi
+}
 
-if [[ ! -d /mnt/c/Windows ]]; then
-	start_spinner "Setting up services"
+setup_services() {
 	sudo systemctl enable --now keyd
 	systemctl enable --now --user mpd mpDris2 syncthing
-	stop_spinner
+}
 
-	start_spinner "Setting up autostart"
+setup_autostart() {
 	mkdir -p .config/autostart
 	cp /usr/share/applications/org.flameshot.Flameshot.desktop "$HOME/.config/autostart/"
 	mkdir -p "$HOME/Pictures/Screenshots/"
+}
+
+change_shell() {
+	sudo chsh -s /usr/bin/zsh "$USER"
+}
+
+main() {
+	exec 3>&1 4>&2
+	exec 1>/dev/null 2>/dev/null
+
+	trap cleanup EXIT
+	trap 'echo "Error on line $LINENO"; cleanup' ERR INT TERM
+
+	set -Eeuo pipefail
+
+	echo -en "$HIDE_CURSOR" >&3
+
+	while getopts "cn:" option; do
+		case $option in
+			c)
+				clone_flag=true ;;
+			n)
+				host_name="$OPTARG" ;;
+			*)
+				echo "Usage: $0 [-c] [-n hostname]" >&4
+				exit 1 ;;
+		esac
+	done
+
+	sudo_timeout
+
+	if ! is_wsl; then
+		flatpak_no_pw
+	fi
+
+	if [[ -n ${host_name+x} ]]; then
+		start_spinner "Setting hostname"
+		set_hostname
+		stop_spinner
+	fi
+
+	start_spinner "Making zypper faster"
+	configure_zypper
 	stop_spinner
-fi
 
-start_spinner "Setting zsh as default shell"
-sudo chsh -s /usr/bin/zsh "$USER"
-stop_spinner
+	if ! is_wsl; then
+		start_spinner "Changing GRUB timeout"
+		configure_grub
+		stop_spinner
 
-echo "Setup complete, you should reboot your system" >&3
+		start_spinner "Opening some ports"
+		open_ports
+		stop_spinner
+	fi
+
+	start_spinner "Updating the system"
+	update_system
+	stop_spinner
+
+	start_spinner "Installing packages, this might take a while"
+	add_highlight_repo
+	if is_wsl; then
+		install_wsl_packages
+	fi
+	install_essential_packages
+	if ! is_wsl; then
+		install_desktop_packages
+		install_codecs
+		install_flatpaks
+		install_tor
+	fi
+	install_texlive
+	stop_spinner
+
+	start_spinner "Configuring applications"
+	configure_applications
+	stop_spinner
+
+	if ! is_wsl; then
+		start_spinner "Setting up services"
+		setup_services
+		stop_spinner
+
+		start_spinner "Setting up autostart"
+		setup_autostart
+		stop_spinner
+	fi
+
+	start_spinner "Setting zsh as default shell"
+	change_shell
+	stop_spinner
+
+	echo "Setup complete, you should reboot your system" >&3
+}
+
+main "$@"
