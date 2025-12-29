@@ -43,7 +43,7 @@ cleanup() {
 	echo -en "\e[?25h" >&3
 }
 
-essential_packages=(
+ESSENTIAL_PACKAGES=(
 	btop
 	fastfetch
 	fzf
@@ -68,7 +68,7 @@ essential_packages=(
 	zsh-syntax-highlighting
 )
 
-desktop_packages=(
+DESKTOP_PACKAGES=(
 	cava
 	flameshot
 	flatpak
@@ -95,13 +95,13 @@ desktop_packages=(
 	wezterm
 )
 
-wsl_packages=(
+WSL_PACKAGES=(
 	gzip
 	man-pages
 	tar
 )
 
-texlive_packages=(
+TEXLIVE_PACKAGES=(
 	adjustbox
 	beamer
 	biber
@@ -138,7 +138,7 @@ texlive_packages=(
 	xstring
 )
 
-flatpaks=(
+FLATPAKS=(
 	com.discordapp.Discord
 	com.github.ahrm.sioyek
 	org.jabref.jabref
@@ -169,7 +169,7 @@ echo -en "\e[?25l" >&3
 echo 'Defaults timestamp_timeout=30' | sudo tee /etc/sudoers.d/timeout
 
 if [[ ! -d /mnt/c/Windows ]]; then
-	# Temporarily add a rule that turns of the need for a password to install flatpaks system-wide
+	# Temporarily add a rule that turns of the need for a password to install Flatpaks system-wide
 	sudo tee /etc/polkit-1/rules.d/45-flatpak-nopw.rules > /dev/null <<-EOF
 		polkit.addRule(function(action, subject) {
 			if (action.id.startsWith("org.freedesktop.Flatpak") &&
@@ -217,16 +217,16 @@ sudo rpm --import https://download.opensuse.org/repositories/home:/leanvargas/op
 sudo zypper --non-interactive refresh
 if [[ -d /mnt/c/Windows ]]; then
 	sudo zypper --non-interactive remove --clean-deps busybox-gzip busybox-which
-	sudo zypper --non-interactive install "${wsl_packages[@]}"
+	sudo zypper --non-interactive install "${WSL_PACKAGES[@]}"
 fi
-sudo zypper --non-interactive install "${essential_packages[@]}"
+sudo zypper --non-interactive install "${ESSENTIAL_PACKAGES[@]}"
 if [[ ! -d /mnt/c/Windows ]]; then
 	# Lock prevents Iosevka variants from being installed on updates
 	sudo zypper --non-interactive addlock "iosevka-*-fonts"
-	sudo zypper --non-interactive install "${desktop_packages[@]}"
+	sudo zypper --non-interactive install "${DESKTOP_PACKAGES[@]}"
 	opi -n codecs
 	flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-	flatpak install --assumeyes --noninteractive flathub "${flatpaks[@]}"
+	flatpak install --assumeyes --noninteractive flathub "${FLATPAKS[@]}"
 
 	# Install Tor Browser
 	gpg --auto-key-locate nodefault,wkd --locate-keys torbrowser@torproject.org
@@ -293,7 +293,7 @@ if sha512sum -c --ignore-missing install-tl-unx.tar.gz.sha512; then
 
 	PATH="$PATH:$HOME/.opt/texlive/current/bin/x86_64-linux"
 
-	tlmgr install "${texlive_packages[@]}"
+	tlmgr install "${TEXLIVE_PACKAGES[@]}"
 else
 	rm -rf install-tl* profile
 	echo -e "\e[31mUnable to verify Tex Live signature, skipped installation\e[39m" >&4
