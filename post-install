@@ -247,7 +247,7 @@ install_texlive() {
 	if sha512sum -c --ignore-missing install-tl-unx.tar.gz.sha512; then
 		tar -xf install-tl-unx.tar.gz
 
-		texlive_release=$(grep 'ReleaseYear = *' "$HOME"/install-tl-*/tlpkg/TeXLive/TLConfig.pm | grep -o '[0-9]\{4\}')
+		local texlive_release=$(grep 'ReleaseYear = *' "$HOME"/install-tl-*/tlpkg/TeXLive/TLConfig.pm | grep -o '[0-9]\{4\}')
 
 		tee > profile <<-EOF
 			selected_scheme scheme-custom
