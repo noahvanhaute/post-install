@@ -18,7 +18,6 @@ ESSENTIAL_PACKAGES=(
 	make
 	ncdu
 	neovim
-	nodejs
 	python313-numpy
 	ShellCheck
 	stow
