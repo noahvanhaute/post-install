@@ -18,7 +18,7 @@ ESSENTIAL_PACKAGES=(
 	make
 	ncdu
 	neovim
-	python313-numpy
+	python3-numpy
 	ShellCheck
 	stow
 	trash-cli
