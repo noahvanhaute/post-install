@@ -170,6 +170,12 @@ set_hostname() {
 	sudo hostnamectl hostname "$host_name"
 }
 
+configure_wsl() {
+	if ! grep -q appendWindowsPath /etc/wsl.conf; then
+		echo -e '[interop]\nappendWindowsPath = false' | sudo tee -a /etc/wsl.conf
+	fi
+}
+
 configure_zypper() {
 	sudo sed -e 's/^# download.max_concurrent_connections = 5/download.max_concurrent_connections = 10/' \
 		-e 's/^# download.min_download_speed = 0/download.min_download_speed = 20000/' \
@@ -358,6 +364,12 @@ main() {
 	if [[ -n ${host_name+x} ]]; then
 		start_spinner 'Setting hostname'
 		set_hostname
+		stop_spinner
+	fi
+
+	if is_wsl; then
+		start_spinner 'Configuring WSL'
+		configure_wsl
 		stop_spinner
 	fi
 
