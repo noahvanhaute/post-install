@@ -121,13 +121,13 @@ spinner() {
 	done
 }
 
-start_spinner() {
+start-spinner() {
 	spinner "$1"&
 	SPINNER_PID=$!
 	disown
 }
 
-stop_spinner() {
+stop-spinner() {
 	if [[ -n ${SPINNER_PID:-} ]]; then
 		kill "$SPINNER_PID"
 		wait "$SPINNER_PID"
@@ -137,7 +137,7 @@ stop_spinner() {
 }
 
 cleanup() {
-	stop_spinner
+	stop-spinner
 	# Restore sudo timeout to default
 	sudo rm -f /etc/sudoers.d/timeout
 	# Remove temporary polkit Flatpak rule
@@ -145,16 +145,16 @@ cleanup() {
 	echo -en "$SHOW_CURSOR" >&3
 }
 
-is_wsl () {
+is-wsl () {
 	[[ -d /mnt/c/Windows ]]
 }
 
-sudo_timeout() {
+sudo-timeout() {
 	# Temporarily increase timeout for sudo command to prevent being password prompted multiple times
 	echo 'Defaults timestamp_timeout=30' | sudo tee /etc/sudoers.d/timeout
 }
 
-flatpak_no_pw() {
+flatpak-no-pw() {
 	# Temporarily add a rule that turns of the need for a password to install Flatpaks system-wide
 	sudo tee /etc/polkit-1/rules.d/45-flatpak-nopw.rules > /dev/null <<-EOF
 		polkit.addRule(function(action, subject) {
@@ -166,70 +166,70 @@ flatpak_no_pw() {
 	EOF
 }
 
-set_hostname() {
+set-hostname() {
 	sudo hostnamectl hostname "$host_name"
 }
 
-configure_wsl() {
+configure-wsl() {
 	if ! grep -q appendWindowsPath /etc/wsl.conf; then
 		echo -e '[interop]\nappendWindowsPath = false' | sudo tee -a /etc/wsl.conf
 	fi
 }
 
-configure_zypper() {
+configure-zypper() {
 	sudo sed -e 's/^# download.max_concurrent_connections = 5/download.max_concurrent_connections = 10/' \
 		-e 's/^# download.min_download_speed = 0/download.min_download_speed = 20000/' \
 		-i /etc/zypp/zypp.conf
 }
 
-configure_grub() {
+configure-grub() {
 	sudo sed -i 's/^GRUB_TIMEOUT=[0-9]\+/GRUB_TIMEOUT=2/' /etc/default/grub
 	sudo grub2-mkconfig -o /boot/grub2/grub.cfg
 }
 
-open_ports() {
+open-ports() {
 	# These ports need to be open for LocalSend to work
 	sudo firewall-cmd --permanent --add-port=53317/tcp
 	sudo firewall-cmd --permanent --add-port=53317/udp
 	sudo firewall-cmd --reload
 }
 
-update_system() {
+update-system() {
 	sudo zypper --non-interactive dist-upgrade --allow-vendor-change
 }
 
-add_highlight_repo() {
+add-highlight-repo() {
 	# Additional repo provides `zsh-syntax-highlighting`
 	sudo zypper --non-interactive addrepo https://download.opensuse.org/repositories/home:leanvargas/openSUSE_Tumbleweed/home:leanvargas.repo
 	sudo rpm --import https://download.opensuse.org/repositories/home:/leanvargas/openSUSE_Tumbleweed/repodata/repomd.xml.key
 	sudo zypper --non-interactive refresh
 }
 
-install_wsl_packages() {
+install-wsl-packages() {
 	sudo zypper --non-interactive remove --clean-deps busybox-gzip busybox-which
 	sudo zypper --non-interactive install "${WSL_PACKAGES[@]}"
 }
 
-install_essential_packages() {
+install-essential-packages() {
 	sudo zypper --non-interactive install "${ESSENTIAL_PACKAGES[@]}"
 }
 
-install_desktop_packages() {
+install-desktop-packages() {
 	# Lock prevents Iosevka variants from being installed on updates
 	sudo zypper --non-interactive addlock iosevka-*-fonts
 	sudo zypper --non-interactive install "${DESKTOP_PACKAGES[@]}"
 }
 
-install_codecs() {
+install-codecs() {
 	opi -n codecs
 }
 
-install_flatpaks() {
+install-flatpaks() {
 	flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 	flatpak install --assumeyes --noninteractive flathub "${FLATPAKS[@]}"
 }
 
-install_tor() {
+install-tor() {
 	gpg --auto-key-locate nodefault,wkd --locate-keys torbrowser@torproject.org
 	gpg --output "$HOME/tor.keyring" --export 0xEF6E286DDA85EA2A4BA7DE684E2C6E8793298290
 
@@ -246,7 +246,7 @@ install_tor() {
 	fi
 }
 
-install_texlive() {
+install-texlive() {
 	curl -LOO https://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz https://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz.sha512
 
 	if sha512sum -c --ignore-missing install-tl-unx.tar.gz.sha512; then
@@ -303,7 +303,7 @@ install_texlive() {
 	fi
 }
 
-configure_applications() {
+configure-applications() {
 	if [[ -n ${clone_flag+x} ]]; then
 		git clone https://github.com/noahvanhaute/dotfiles.git
 	else
@@ -317,18 +317,18 @@ configure_applications() {
 	fi
 }
 
-setup_services() {
+setup-services() {
 	sudo systemctl enable --now keyd
 	systemctl enable --now --user mpd mpDris2 syncthing
 }
 
-setup_autostart() {
+setup-autostart() {
 	mkdir -p .config/autostart
 	cp /usr/share/applications/org.flameshot.Flameshot.desktop "$HOME/.config/autostart/"
 	mkdir -p "$HOME/Pictures/Screenshots/"
 }
 
-change_shell() {
+change-shell() {
 	sudo chsh -s /usr/bin/zsh "$USER"
 }
 
@@ -355,74 +355,74 @@ main() {
 		esac
 	done
 
-	sudo_timeout
+	sudo-timeout
 
-	if ! is_wsl; then
-		flatpak_no_pw
+	if ! is-wsl; then
+		flatpak-no-pw
 	fi
 
 	if [[ -n ${host_name+x} ]]; then
-		start_spinner 'Setting hostname'
-		set_hostname
-		stop_spinner
+		start-spinner 'Setting hostname'
+		set-hostname
+		stop-spinner
 	fi
 
-	if is_wsl; then
-		start_spinner 'Configuring WSL'
-		configure_wsl
-		stop_spinner
+	if is-wsl; then
+		start-spinner 'Configuring WSL'
+		configure-wsl
+		stop-spinner
 	fi
 
-	start_spinner 'Making zypper faster'
-	configure_zypper
-	stop_spinner
+	start-spinner 'Making zypper faster'
+	configure-zypper
+	stop-spinner
 
-	if ! is_wsl; then
-		start_spinner 'Changing GRUB timeout'
-		configure_grub
-		stop_spinner
+	if ! is-wsl; then
+		start-spinner 'Changing GRUB timeout'
+		configure-grub
+		stop-spinner
 
-		start_spinner 'Opening some ports'
-		open_ports
-		stop_spinner
+		start-spinner 'Opening some ports'
+		open-ports
+		stop-spinner
 	fi
 
-	start_spinner 'Updating the system'
-	update_system
-	stop_spinner
+	start-spinner 'Updating the system'
+	update-system
+	stop-spinner
 
-	start_spinner 'Installing packages, this might take a while'
-	add_highlight_repo
-	if is_wsl; then
-		install_wsl_packages
+	start-spinner 'Installing packages, this might take a while'
+	add-highlight-repo
+	if is-wsl; then
+		install-wsl-packages
 	fi
-	install_essential_packages
-	if ! is_wsl; then
-		install_desktop_packages
-		install_codecs
-		install_flatpaks
-		install_tor
+	install-essential-packages
+	if ! is-wsl; then
+		install-desktop-packages
+		install-codecs
+		install-flatpaks
+		install-tor
 	fi
-	install_texlive
-	stop_spinner
+	install-texlive
+	stop-spinner
 
-	start_spinner 'Configuring applications'
-	configure_applications
-	stop_spinner
+	start-spinner 'Configuring applications'
+	configure-applications
+	stop-spinner
 
-	if ! is_wsl; then
-		start_spinner 'Setting up services'
-		setup_services
-		stop_spinner
+	if ! is-wsl; then
+		start-spinner 'Setting up services'
+		setup-services
+		stop-spinner
 
-		start_spinner 'Setting up autostart'
-		setup_autostart
-		stop_spinner
+		start-spinner 'Setting up autostart'
+		setup-autostart
+		stop-spinner
 	fi
 
-	start_spinner 'Setting zsh as default shell'
-	change_shell
-	stop_spinner
+	start-spinner 'Setting zsh as default shell'
+	change-shell
+	stop-spinner
 
 	echo 'Setup complete, you should reboot your system' >&3
 }
