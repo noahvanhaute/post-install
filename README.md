@@ -14,13 +14,15 @@ Running on a WSL install is automatically detected and necessary adjustments are
 
 This script can be ran without any cloning or downloading:
 ```console
-curl https://raw.githubusercontent.com/noahvanhaute/post-install/refs/heads/main/post-install | bash
+curl https://raw.githubusercontent.com/noahvanhaute/post-install/refs/heads/main/post-install \
+| bash
 ```
 After this you will be prompted for your root password, simply enter that and wait.
 
 Some optional flags are also provided:
 ```console
-curl https://raw.githubusercontent.com/noahvanhaute/post-install/refs/heads/main/post-install | bash -s -- -c -n hostname
+curl https://raw.githubusercontent.com/noahvanhaute/post-install/refs/heads/main/post-install \
+| bash -s -- -c -n hostname
 ```
 
 | Flag          | Action                                                                                                             |
