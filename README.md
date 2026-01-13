@@ -20,7 +20,8 @@ After this you will be prompted for your root password, simply enter that and wa
 
 Some optional flags are also provided:
 ```console
-curl https://raw.githubusercontent.com/noahvanhaute/post-install/main/post-install | bash -s -- -c -n hostname
+curl https://raw.githubusercontent.com/noahvanhaute/post-install/main/post-install | bash \
+-s -- -c -n hostname
 ```
 
 | Flag          | Action                                                                                                             |
