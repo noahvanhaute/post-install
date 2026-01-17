@@ -5,6 +5,7 @@ GREEN='\e[32m'
 DEFAULT='\e[39m'
 HIDE_CURSOR='\e[?25l'
 SHOW_CURSOR='\e[?25h'
+spinner_pid=
 
 ESSENTIAL_PACKAGES=(
 	btop
@@ -122,16 +123,13 @@ spinner() {
 }
 
 start-spinner() {
-	spinner "$1"&
-	SPINNER_PID=$!
-	disown
+	spinner "$1" &
+	spinner_pid=$!
 }
 
 stop-spinner() {
-	if [[ -n ${SPINNER_PID:-} ]]; then
-		kill "$SPINNER_PID"
-		wait "$SPINNER_PID"
-		unset SPINNER_PID
+	if [[ -n $spinner_pid ]]; then
+		kill "$spinner_pid"
 		echo -e "${GREEN}✔${DEFAULT}" >&3
 	fi
 }
