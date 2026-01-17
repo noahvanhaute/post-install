@@ -228,23 +228,6 @@ install-flatpaks() {
 	flatpak install --assumeyes --noninteractive flathub "${FLATPAKS[@]}"
 }
 
-install-tor() {
-	gpg --auto-key-locate nodefault,wkd --locate-keys torbrowser@torproject.org
-	gpg --output "$HOME/tor.keyring" --export 0xEF6E286DDA85EA2A4BA7DE684E2C6E8793298290
-
-	curl -LOO $(curl -s https://aus1.torproject.org/torbrowser/update_3/release/download-linux-x86_64.json | jq -r '"\(.binary) \(.sig)"')
-
-	if gpgv --keyring ./tor.keyring "$HOME"/tor-browser-linux-x86_64-*.tar.xz.asc "$HOME"/tor-browser-linux-x86_64-*.tar.xz; then
-		tar -xJf tor-browser-linux-x86_64-*.tar.xz
-		rm tor-browser-linux-x86_64-*.tar.xz tor-browser-linux-x86_64-*.tar.xz.asc tor.keyring
-		sudo mv tor-browser /opt/
-		(cd /opt/tor-browser/; ./start-tor-browser.desktop --register-app)
-	else
-		rm tor-browser-linux-x86_64-*.tar.xz
-		echo -e "${RED}Unable to verify Tor Browser signature, skipped installation${DEFAULT}" >&4
-	fi
-}
-
 install-texlive() {
 	curl -LOO https://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz https://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz.sha512
 
@@ -400,7 +383,6 @@ main() {
 		install-desktop-packages
 		install-codecs
 		install-flatpaks
-		install-tor
 	fi
 	install-texlive
 	stop-spinner
