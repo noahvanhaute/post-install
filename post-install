@@ -184,7 +184,6 @@ configure-zypper() {
 
 configure-grub() {
 	sudo sed -i 's/^GRUB_TIMEOUT=[0-9]\+/GRUB_TIMEOUT=2/' /etc/default/grub
-	sudo grub2-mkconfig -o /boot/grub2/grub.cfg
 }
 
 open-ports() {
