@@ -293,7 +293,7 @@ install-texlive() {
 		tlmgr install "${TEXLIVE_PACKAGES[@]}"
 	else
 		rm -rf install-tl* profile
-		echo -e "${RED}Unable to verify Tex Live signature, skipped installation${DEFAULT}" >&4
+		return 1
 	fi
 }
 
@@ -307,7 +307,7 @@ configure-applications() {
 	if [[ -d $HOME/dotfiles ]]; then
 		(cd "$HOME/dotfiles/" && stow . && sudo stow etc -t /etc/)
 	else
-		echo -e "${RED}Unable to clone dotfiles${DEFAULT}" >&4
+		return 1
 	fi
 }
 
