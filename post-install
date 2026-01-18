@@ -248,6 +248,8 @@ install-texlive() {
 
 		local texlive_release=$(grep 'ReleaseYear = *' "$HOME"/install-tl-*/tlpkg/TeXLive/TLConfig.pm | grep -o '[0-9]\{4\}')
 
+		[[ -d $HOME/.opt/texlive/$texlive_release ]] && rm -rf "$HOME"/install-tl* && return 0
+
 		tee > profile <<-EOF
 			selected_scheme scheme-custom
 			TEXDIR $HOME/.opt/texlive/$texlive_release
@@ -284,7 +286,7 @@ install-texlive() {
 
 		perl "$HOME"/install-tl-*/install-tl --profile=profile
 
-		rm -rf install-tl* profile
+		rm -rf "$HOME"/install-tl* profile
 
 		ln -sfn "$HOME/.opt/texlive/$texlive_release" "$HOME/.opt/texlive/current"
 
@@ -292,7 +294,7 @@ install-texlive() {
 
 		tlmgr install "${TEXLIVE_PACKAGES[@]}"
 	else
-		rm -rf install-tl* profile
+		rm -rf "$HOME"/install-tl* profile
 		return 1
 	fi
 }
@@ -300,15 +302,13 @@ install-texlive() {
 configure-applications() {
 	if [[ -n $clone_flag ]]; then
 		git clone https://github.com/noahvanhaute/dotfiles.git
-	else
+	elif [[ -d $HOME/.ssh ]]; then
 		ssh-keyscan github.com >> "$HOME/.ssh/known_hosts"
 		git clone git@github.com:noahvanhaute/dotfiles.git
-	fi
-	if [[ -d $HOME/dotfiles ]]; then
-		(cd "$HOME/dotfiles/" && stow . && sudo stow etc -t /etc/)
 	else
 		return 1
 	fi
+	(cd "$HOME/dotfiles/" && stow . && sudo stow etc -t /etc/)
 }
 
 setup-services() {
