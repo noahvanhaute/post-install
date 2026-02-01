@@ -28,8 +28,6 @@ ESSENTIAL_PACKAGES=(
 	zathura
 	zathura-plugin-cb
 	zathura-plugin-pdf-mupdf
-	zsh
-	zsh-syntax-highlighting
 )
 
 DESKTOP_PACKAGES=(
@@ -209,13 +207,6 @@ update-system() {
 	sudo zypper --non-interactive dist-upgrade --allow-vendor-change
 }
 
-add-highlight-repo() {
-	# Additional repo provides `zsh-syntax-highlighting`
-	sudo zypper --non-interactive addrepo https://download.opensuse.org/repositories/home:leanvargas/openSUSE_Tumbleweed/home:leanvargas.repo
-	sudo rpm --import https://download.opensuse.org/repositories/home:/leanvargas/openSUSE_Tumbleweed/repodata/repomd.xml.key
-	sudo zypper --non-interactive refresh
-}
-
 install-wsl-packages() {
 	sudo zypper --non-interactive remove --clean-deps busybox-gzip busybox-which
 	sudo zypper --non-interactive install "${WSL_PACKAGES[@]}"
@@ -322,10 +313,6 @@ setup-autostart() {
 	mkdir -p "$HOME/Pictures/Screenshots/"
 }
 
-change-shell() {
-	sudo chsh -s /usr/bin/zsh "$USER"
-}
-
 main() {
 	exec 3>&1 4>&2
 	exec 1>/dev/null 2>/dev/null
@@ -384,7 +371,6 @@ main() {
 	stop-spinner
 
 	start-spinner 'Installing packages, this might take a while'
-	add-highlight-repo
 	if is-wsl; then
 		install-wsl-packages
 		error-message 'failed to add highlight repo'
@@ -416,10 +402,6 @@ main() {
 		setup-autostart
 		stop-spinner
 	fi
-
-	start-spinner 'Setting zsh as default shell'
-	change-shell
-	stop-spinner
 
 	echo 'Setup complete, you should reboot your system' >&3
 }
