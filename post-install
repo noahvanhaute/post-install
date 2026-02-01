@@ -299,7 +299,7 @@ configure-applications() {
 	else
 		return 1
 	fi
-	(cd "$HOME/dotfiles/" && stow . && sudo stow etc -t /etc/)
+	(cd "$HOME/dotfiles/" && stow --adopt . && sudo stow etc -t /etc/ && git reset --hard)
 }
 
 setup-services() {
