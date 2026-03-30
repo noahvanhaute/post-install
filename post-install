@@ -58,6 +58,7 @@ DESKTOP_PACKAGES=(
 )
 
 WSL_PACKAGES=(
+	bash-completion
 	gzip
 	man-pages
 	tar
