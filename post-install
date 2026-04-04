@@ -193,10 +193,6 @@ configure-zypper() {
 		-i /etc/zypp/zypp.conf
 }
 
-configure-grub() {
-	sudo sed -i 's/^timeout=[0-9]$/timeout=2/' /boot/efi/EFI/opensuse/grubenv
-}
-
 open-ports() {
 	# These ports need to be open for LocalSend to work
 	sudo firewall-cmd --permanent --add-port=53317/tcp
@@ -358,10 +354,6 @@ main() {
 	stop-spinner
 
 	if ! is-wsl; then
-		start-spinner 'Changing GRUB timeout'
-		configure-grub
-		stop-spinner
-
 		start-spinner 'Opening some ports'
 		open-ports
 		stop-spinner
