@@ -366,7 +366,7 @@ main() {
 	start-spinner 'Installing packages, this might take a while'
 	if is-wsl; then
 		install-wsl-packages
-		error-message 'failed to add highlight repo'
+		error-message 'failed to install WSL packages'
 	fi
 	install-essential-packages
 	error-message 'failed to install essential packages'
