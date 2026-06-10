@@ -60,6 +60,8 @@ WSL_PACKAGES=(
 	bash-completion
 	gzip
 	man-pages
+	python3-matplotlib-tk
+	python3-tk
 	tar
 )
 
@@ -101,10 +103,8 @@ TEXLIVE_PACKAGES=(
 )
 
 FLATPAKS=(
-	com.discordapp.Discord
-	com.github.ahrm.sioyek
 	org.jabref.jabref
-	org.localsend.localsend_app
+	org.jellyfin.JellyfinDesktop
 )
 
 spinner() {
