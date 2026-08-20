@@ -10,6 +10,7 @@ spinner_pid=
 
 ESSENTIAL_PACKAGES=(
 	btop
+	clang
 	fastfetch
 	gcc
 	git
@@ -19,9 +20,13 @@ ESSENTIAL_PACKAGES=(
 	make
 	ncdu
 	neovim
+	perl-File-HomeDir
+	perl-YAML-Tiny
+	python3-black
 	python3-numpy
 	ShellCheck
 	stow
+	StyLua
 	trash-cli
 	typst
 	zathura
@@ -85,6 +90,7 @@ TEXLIVE_PACKAGES=(
 	graphbox
 	ieeetran
 	koma-script
+	latexindent
 	latexmk
 	listings
 	matlab-prettifier
@@ -106,6 +112,95 @@ FLATPAKS=(
 	org.jabref.jabref
 	org.jellyfin.JellyfinDesktop
 )
+
+main() {
+	exec 3>&1 4>&2
+	exec 1>/dev/null 2>/dev/null
+
+	trap cleanup EXIT
+	trap errored=true ERR
+
+	echo -en "$HIDE_CURSOR" >&3
+
+	while getopts 'cn:' option; do
+		case $option in
+			c)
+				clone_flag=true ;;
+			n)
+				host_name="$OPTARG" ;;
+			*)
+				echo "Usage: $0 [-c] [-n hostname]" >&4
+				exit 1 ;;
+		esac
+	done
+
+	sudo-timeout
+
+	if ! is-wsl; then
+		flatpak-no-pw
+	fi
+
+	if [[ -n $host_name ]]; then
+		start-spinner 'Setting hostname'
+		set-hostname
+		stop-spinner
+	fi
+
+	if is-wsl; then
+		start-spinner 'Configuring WSL'
+		configure-wsl
+		stop-spinner
+	fi
+
+	start-spinner 'Making zypper faster'
+	configure-zypper
+	stop-spinner
+
+	if ! is-wsl; then
+		start-spinner 'Opening some ports'
+		open-ports
+		stop-spinner
+	fi
+
+	start-spinner 'Updating the system'
+	update-system
+	stop-spinner
+
+	start-spinner 'Installing packages, this might take a while'
+	if is-wsl; then
+		install-wsl-packages
+		error-message 'failed to install WSL packages'
+	fi
+	install-essential-packages
+	error-message 'failed to install essential packages'
+	if ! is-wsl; then
+		install-desktop-packages
+		error-message 'failed to install essential packages'
+		install-codecs
+		error-message 'failed to install codecs'
+		install-flatpaks
+		error-message 'failed to install flatpaks'
+	fi
+	install-texlive
+	error-message 'failed to install texlive'
+	stop-spinner
+
+	start-spinner 'Configuring applications'
+	configure-applications
+	stop-spinner
+
+	if ! is-wsl; then
+		start-spinner 'Setting up services'
+		setup-services
+		stop-spinner
+
+		start-spinner 'Setting up autostart'
+		setup-autostart
+		stop-spinner
+	fi
+
+	echo 'Setup complete, you should reboot your system' >&3
+}
 
 spinner() {
 	local i=1
@@ -307,95 +402,6 @@ setup-autostart() {
 	mkdir -p .config/autostart
 	cp /usr/share/applications/org.flameshot.Flameshot.desktop "$HOME/.config/autostart/"
 	mkdir -p "$HOME/Pictures/Screenshots/"
-}
-
-main() {
-	exec 3>&1 4>&2
-	exec 1>/dev/null 2>/dev/null
-
-	trap cleanup EXIT
-	trap errored=true ERR
-
-	echo -en "$HIDE_CURSOR" >&3
-
-	while getopts 'cn:' option; do
-		case $option in
-			c)
-				clone_flag=true ;;
-			n)
-				host_name="$OPTARG" ;;
-			*)
-				echo "Usage: $0 [-c] [-n hostname]" >&4
-				exit 1 ;;
-		esac
-	done
-
-	sudo-timeout
-
-	if ! is-wsl; then
-		flatpak-no-pw
-	fi
-
-	if [[ -n $host_name ]]; then
-		start-spinner 'Setting hostname'
-		set-hostname
-		stop-spinner
-	fi
-
-	if is-wsl; then
-		start-spinner 'Configuring WSL'
-		configure-wsl
-		stop-spinner
-	fi
-
-	start-spinner 'Making zypper faster'
-	configure-zypper
-	stop-spinner
-
-	if ! is-wsl; then
-		start-spinner 'Opening some ports'
-		open-ports
-		stop-spinner
-	fi
-
-	start-spinner 'Updating the system'
-	update-system
-	stop-spinner
-
-	start-spinner 'Installing packages, this might take a while'
-	if is-wsl; then
-		install-wsl-packages
-		error-message 'failed to install WSL packages'
-	fi
-	install-essential-packages
-	error-message 'failed to install essential packages'
-	if ! is-wsl; then
-		install-desktop-packages
-		error-message 'failed to install essential packages'
-		install-codecs
-		error-message 'failed to install codecs'
-		install-flatpaks
-		error-message 'failed to install flatpaks'
-	fi
-	install-texlive
-	error-message 'failed to install texlive'
-	stop-spinner
-
-	start-spinner 'Configuring applications'
-	configure-applications
-	stop-spinner
-
-	if ! is-wsl; then
-		start-spinner 'Setting up services'
-		setup-services
-		stop-spinner
-
-		start-spinner 'Setting up autostart'
-		setup-autostart
-		stop-spinner
-	fi
-
-	echo 'Setup complete, you should reboot your system' >&3
 }
 
 main "$@"
