@@ -10,21 +10,20 @@ Running on a WSL install is automatically detected and necessary adjustments are
 - You run the script as a user.
 
 ## Usage
-**! Never run a script off the internet without checking what it does first !**
+
+> [!WARNING]
+> Never run a script off the internet without checking what it does first!
 
 This script can be ran without any cloning or downloading:
+
 ```console
 curl https://raw.githubusercontent.com/noahvanhaute/post-install/main/post-install | bash
 ```
 After this you will be prompted for your root password, simply enter that and wait.
 
-Some optional flags are also provided:
+An optional flag is also provided to let you set the hostname of the system.
+
 ```console
 curl https://raw.githubusercontent.com/noahvanhaute/post-install/main/post-install | bash \
--s -- -c -n hostname
+-s -- -n coolhostname
 ```
-
-| Flag          | Action                                                                                                             |
-| ------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `-c`          | The scrips uses ssh for cloning the dotfiles repo by default, this flag will let you use https instead.            |
-| `-n hostname` | Set the hostname of the system, replace `hostname` with whatever you want (within the requirements for hostname). |

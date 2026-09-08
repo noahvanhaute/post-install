@@ -15,8 +15,6 @@ ESSENTIAL_PACKAGES=(
 	gcc
 	git
 	gnuplot
-	jq
-	juliaup
 	make
 	ncdu
 	neovim
@@ -36,17 +34,14 @@ ESSENTIAL_PACKAGES=(
 
 DESKTOP_PACKAGES=(
 	cava
-	flameshot
 	flatpak
 	foot
-	FreeCAD
 	gimp
 	ibm-plex-mono-fonts
 	ibm-plex-sans-fonts
 	inkscape
 	iosevka-fonts
 	keyd
-	kicad
 	kid3
 	kronometer
 	libnotify-tools
@@ -122,10 +117,8 @@ main() {
 
 	echo -en "$HIDE_CURSOR" >&3
 
-	while getopts 'cn:' option; do
+	while getopts 'n:' option; do
 		case $option in
-			c)
-				clone_flag=true ;;
 			n)
 				host_name="$OPTARG" ;;
 			*)
@@ -382,14 +375,7 @@ install-texlive() {
 }
 
 configure-applications() {
-	if [[ -n $clone_flag ]]; then
-		git clone https://github.com/noahvanhaute/dotfiles.git
-	elif [[ -d $HOME/.ssh ]]; then
-		ssh-keyscan github.com >> "$HOME/.ssh/known_hosts"
-		git clone git@github.com:noahvanhaute/dotfiles.git
-	else
-		return 1
-	fi
+	git clone https://github.com/noahvanhaute/dotfiles.git
 	(cd "$HOME/dotfiles/" && stow --adopt . && sudo stow etc -t /etc/ && git reset --hard)
 }
 
